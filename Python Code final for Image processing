@@ -1,0 +1,467 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Mon May 17 10:37:23 2021
+
+@author: ASUS
+"""
+
+import tkinter
+from tkinter import *
+from tkinter import filedialog as dfl
+import os
+import sys
+
+import cv2
+import numpy as np
+import random
+import math
+import scipy as sp
+import pandas as pd
+
+from sklearn import preprocessing
+from sklearn.model_selection import train_test_split
+from sklearn import svm
+from sklearn.metrics import accuracy_score
+from subprocess import call
+window = Tk()
+window.title('Paddy Desease Detection')
+window.geometry("800x600")
+window.resizable(0,0)
+canvas = Canvas(window, width = 800, height = 600)
+canvas.pack()
+
+def update():
+    with open("output.txt","r") as f:
+        data = f.read()
+        T.delete("1.0", "end")  # if you want to remove the old data
+        T.insert(END,data)
+    T.after(1000, update)
+  
+
+def fileOpen():
+    file1 = dfl.askopenfilename()
+    print (file1)
+    input_file = file1
+    file = open("file_name.txt","w+")
+    file.write(file1)
+    file.close()
+    
+def prediction():
+    #os.system('python checker_Svm.py')
+    #execfile('checker_Svm.py')
+    import cv2
+    import numpy as np
+    import random
+    from random import shuffle
+    import math
+    import scipy as sp
+    import pandas as pd
+    from sklearn import preprocessing
+    from sklearn.model_selection import train_test_split
+    from sklearn import svm
+    from sklearn.svm import SVC
+    from sklearn.metrics import accuracy_score
+    from matplotlib import pyplot as plt
+    from sklearn.metrics import confusion_matrix
+
+    from sklearn.metrics import classification_report
+    from sklearn import metrics
+    import matplotlib.pyplot as plt
+    from sklearn.metrics import precision_recall_fscore_support as score
+
+    file = open("file_name.txt","r")
+    files = file.read()
+    img = cv2.imread(files)
+    data = pd.read_csv("H:/.spyder-py3/ant/train.csv", index_col=0)
+
+#data = data.sample(frac=1)
+#print (data)
+    data.fillna(0,inplace = True)
+
+    #SVM initialization
+
+    cols = [col for col in data.columns if col not in ["type"]]
+
+    train_data = data[cols]
+
+#print (train_data)
+    target = data["type"]
+
+#print (target)
+    data_train, data_test, target_train, target_test = train_test_split(data,target, test_size =.87, random_state = 0,shuffle=True)
+
+    clf =SVC(kernel='linear')
+
+    clf_acc =SVC(kernel='linear')
+
+    clf.fit(train_data,target)
+
+    clf_acc.fit(data_train,target_train)
+
+    #print( data_train)
+    #print (data_test)
+
+#print (target_test )
+    img = np.uint8(img)
+
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+
+    h,s,v = cv2.split(hsv)
+
+#cv2.imshow("Saturation",s)
+
+
+    ret, thresh = cv2.threshold(s,0,255,cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
+
+
+#cv2.imshow('ThreshHold',img)
+  
+#cv2.imshow('Otsu Threshold', thresh)
+#morphological transform
+    kernel = np.ones((3,3), np.uint8)
+    opening = cv2.morphologyEx(thresh, cv2.MORPH_GRADIENT, kernel)
+
+    opening = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel, iterations = 8)
+#closing = cv2.morphologyEx(opening, cv2.MORPH_GRADIENT, kernel)
+#closing = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel, iterations = 1)
+
+
+    ret, mask = cv2.threshold(opening,30, 255, cv2.THRESH_BINARY)
+    opening1 = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel, iterations = 8)
+
+
+
+#cv2.imshow('Opening',opening1)
+
+    only_leaf = cv2.bitwise_and(img,img,mask = mask)
+#cv2.imshow('Opening',only_leaf)
+#gray1 = cv2.cvtColor(only_leaf,cv2.COLOR_BGR2GRAY)
+#cv2.imshow('Opening',gray1)
+    gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+
+#gray_resize = cv2.resize(gray,(256,256))
+    arr = np.asarray(gray)
+    def kmeans(histogram):
+        for k in range(0,30):
+        #print '\niteration',k
+        #''' First iteration assign random centroid points '''
+            if k == 0:
+                cent1 = rand_points[0]
+                cent2 = rand_points[1]
+            else:
+            
+            #print '\n selecting centroid values'
+                cent1 = centroid1_avg
+                cent2 = centroid2_avg
+
+        #print histogram
+            point1_centroid = []
+            point2_centroid = []
+            w1_centroid = []
+            w2_centroid = []
+            sum1 = 0
+            sum2 = 0
+            for i,val in enumerate(histogram):
+                ''' computing absolute distance from each of the cluster and assigning it to a particular cluster based on distance'''
+            #print '\n\n','i',i,'val',val,'cent1', cent1,'cent2', cent2 
+                if  abs(i - cent1) <= abs(i - cent2):
+                    point1_centroid.append(i)
+                    w1_centroid.append(val)
+                    sum1 = sum1 + (i * val)
+                
+                #print '\nselection 1'
+                else:
+                    point2_centroid.append(i)
+                    w2_centroid.append(val)
+                    sum2 = sum2 + (i * val)
+               
+                #print '\nselection 2'
+
+            
+                
+        
+            sum_w1 = sum(w1_centroid)
+            sum_w2 = sum(w2_centroid)
+            if(sum_w1==0):
+                sum_w1 = 1
+            elif(sum_w2==0):
+                sum_w2 = 1
+            
+            centroid1_avg = int(sum1)/sum_w1      
+            centroid2_avg = int(sum2)/sum_w2     
+        
+            
+        #print '\n\n','sum1',sum1,'sum2',sum2,'cent1', centroid1_avg,'cent2', centroid2_avg
+        return [point1_centroid,point2_centroid] 
+
+
+    rows,columns = np.shape(arr)
+
+    rand_points = [ random.randint(1, 255) for i in range(2)]
+
+    '''finding the histogram of the image to obtain total number of pixels in each level'''
+
+    hist,bins = np.histogram(arr,256,[1,256])
+
+#print hist,bins
+
+    centroid1_avg = 0
+    centroid2_avg = 0
+
+
+
+    res = kmeans(hist)
+#print res
+
+
+    end = np.zeros((rows,columns))
+
+    if (len(res[1]) < len(res[0])):
+        for i in range(rows):
+            for j in range(columns):
+    
+                if (arr[i][j] in res[1]):
+                    end[i][j] = int(255)
+
+                else:
+                    end[i][j] = int(0)
+
+    elif(len(res[0])<len(res[1])):
+        for i in range(rows):
+            for j in range(columns):
+    
+                if (arr[i][j] in res[0]):
+                    end[i][j] = int(255)
+
+                else:
+                    end[i][j] = int(0)
+
+
+
+
+
+#gray = cv2.cvtColor(maskhsv1,cv2.COLOR_HSV2GRAY)
+    
+
+#h,s,v = cv2.split(end)
+
+#cv2.imshow("Saturation",hsv)
+#equ = cv2.equalizeHist(s)
+
+
+#ret, thresh = cv2.threshold(s,0,255,cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)        
+        
+
+
+
+
+    mask = np.uint8(end)
+
+
+    masked_f = cv2.bitwise_and(img,img,mask = mask)
+
+    counts_non = np.count_nonzero(mask)
+    count_zero = (64*64)-counts_non
+
+    if(count_zero < counts_non):
+        mask = np.invert(mask) 
+        
+
+    masked_area = cv2.bitwise_and(img,img,mask = mask)
+
+    masked_area_resized = cv2.resize(masked_area,(256,256))
+
+#cv2.imshow("Masked",masked_area_resized)
+
+#masked_gray = cv2.cvtColor(masked_area,cv2.COLOR_BGR2GRAY)
+
+#blob = cv2.SimpleBlobDetector_create()
+
+#keypoints = blob.detect(masked_gray)
+
+#draw_keypoints= cv2.drawKeypoints(image, keypoints, np.array([]),(0,0,255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+#cv2.imshow("Blob",draw_keypoints)
+
+    masked_hsv = cv2.cvtColor(masked_area, cv2.COLOR_BGR2HSV)
+
+    mask_green = cv2.inRange(masked_hsv, (30,0,0),(140,255,255))
+
+    inv_mask_green = np.invert(mask_green)
+
+    final_mask = cv2.subtract(mask,mask_green)
+#final_area = cv2.bitwise_and(img,img,mask = final_mask)
+#dilation = cv2.dilate(final_mask,kernel,iterations = 2)
+#opening = cv2.morphologyEx(final_mask, cv2.MORPH_OPEN, kernel)
+    closing = cv2.morphologyEx(final_mask, cv2.MORPH_CLOSE, kernel)
+    dilation = cv2.dilate(closing,kernel,iterations = 1)
+    final_area = cv2.bitwise_and(img,img,mask = dilation)
+
+
+#cv2.imshow("Mask",dilation)
+
+#cv2.imshow("Final_Area",final_area)
+
+
+#cv2.imshow("Masked",masked_f)
+
+#cv2.imshow("Background Removed",only_leaf)
+#gray2 = cv2.cvtColor(only_leaf,cv2.COLOR_BGR2GRAY)
+#cv2.imwrite("image.jpg",only_leaf)
+#ret, thresh = cv2.threshold(gray2,90,255,cv2.THRESH_BINARY)
+#cv2.imshow("Background Removed",thresh)
+    p,hierarchy = cv2.findContours(dilation, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+#cv2.imshow("Final_Area",p)
+    try:
+        cnt = p[0]
+    except IndexError:
+        pass
+    area = cv2.contourArea(cnt)
+    for i in p:
+            (x,y),radius = cv2.minEnclosingCircle(i)
+            center = (int(x),int(y))
+            radius = int(radius)
+            for i in p:
+                if cv2.contourArea(i) > area:
+                    cnt = i
+
+                    area = cv2.contourArea(i)
+                    cv2.circle(img,center,radius,(0,0,255),1)
+            print (radius)
+       
+    x1,y1,w1,h1 = cv2.boundingRect(cnt)
+#data={'color_index','width_value','height_value'}
+#df = pd.DataFrame()
+#width_value=(w1)
+
+#height_value=(h1)
+    #print (w1,h1)
+    croped = final_area[y1:y1+h1,x1:x1+w1, ]
+
+#re_croped1 = cv2.resize(croped,(250,250))
+    re_croped2 = croped
+
+#cv2.imshow("ReCropped",croped)
+    np.seterr(divide='ignore', invalid='ignore')
+    average = np.true_divide(croped.sum(1),(croped!=0).sum(1))
+
+    mean = np.mean(average)
+
+#color_index=(mean)
+
+    #print (mean)
+
+    std=np.nanstd(np.where(np.isclose(croped,0), np.nan,croped))
+
+    #print (std)
+
+
+    std_devi=(std)
+
+
+
+    img = cv2.resize(img,(256,256))       
+#cv2.imshow("Image",img)
+    test_list=[]
+    test_list.append(mean)
+    test_list.append(w1)
+    test_list.append(h1)
+    test_list.append(std)
+
+
+    test = np.array(test_list)
+    test = test.reshape(1,-1)
+    print (test)
+
+    y_pred = clf.predict(test)
+
+    y_pred_acc = clf_acc.predict(data_test)
+
+#accuracy
+    accu = accuracy_score(target_test, y_pred_acc)
+
+    accuracy = accu*100
+
+    from sklearn.metrics import classification_report, confusion_matrix
+#confusion matrix
+    conf = confusion_matrix(target_test, y_pred_acc)
+
+    print (conf)
+#target_names = [
+
+
+
+    print (target_test)
+#print(classification_report(target_test, y_pred_acc)
+      
+
+
+                             
+
+
+#plt.figure()
+#plt.plot(specificity.ravel(), sensitivity.ravel(),label='AUC of ROC Curve')
+#plt.show()
+
+
+#plt.plot(fpr,tpr,marker='.')
+
+    fl = open("output.txt","w+")
+
+    print ("accuracy:   "+str(accuracy)+"%")
+
+    #fl.write("accuracy:   "+str(accuracy)+"%\r\n")
+
+    print (y_pred[0])
+
+    if (y_pred[0]==1.0):
+        print ("This leaf has anthracnose")
+        fl.write("This leaf has anthracnose")
+    
+    elif (y_pred[0]==2.0):
+        print ("This leaf is healthy")
+        fl.write("This leaf is healthy")
+
+    else:
+        print( "I do not know what it is")
+        fl.write("I don not know it is")
+
+
+    fl.close()
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+                      
+def train():
+    #call(["python", "test.py"])
+    print (w1,h1)
+    print (mean)
+    print (std)
+#def train():
+    #call(["python", "test.py"])
+
+f = open("output.txt","r+")
+li = f.readlines(1)
+li1 = f.readlines(2)
+data = f.read()
+f = open("output.txt","r+")
+li = f.readlines(1)
+li1 = f.readlines(2)
+data = f.read()
+
+print (li)
+#print li1
+    
+#Label(canvas, text=li[0],fg="red",bg="yellow",font=("Helvetica",16)).pack()
+#Label(canvas, text=li[1],fg="red",bg="yellow",font=("Helvetica",16)).pack()
+T = Text(canvas, height=5, width=30,bg='yellow',fg='red',font=('Helvetica',16))
+T.insert(END,data)
+T.pack()
+
+#update()
+    
+
+button = Button(canvas,text = "Choose Image", width=50,height=5,bg='black',fg='yellow', command= fileOpen).pack()
+button1 = Button(canvas,text = "Prediction", width=50,height=5,bg='black',fg='yellow', command= prediction).pack()
+button2 = Button(canvas,text = "Train", width=50,height=5,bg='black',fg='yellow', command= train).pack()
+button3 = Button(canvas,text = "Show Result", width=50,height=5,bg='black',fg='yellow', command= update).pack()
+canvas.mainloop()
